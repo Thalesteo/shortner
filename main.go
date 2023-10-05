@@ -53,6 +53,7 @@ func main() {
 		PUT  	/user/:id 		EditUser
 		DELETE	/user/:id		DeleteUser
 	*/
+	app.Delete("/user/:id", handlers.DeleteUser)
 
 	/*
 		link groups endpoints ALL middleware(auth)

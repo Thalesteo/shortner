@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"log"
+
 	"github.com/Thalesteo/trypgx/db"
 	"github.com/Thalesteo/trypgx/models"
 	"github.com/gofiber/fiber/v2"
@@ -103,29 +105,47 @@ func CreateUser(c *fiber.Ctx) error {
 }
 
 func DeleteUser(c *fiber.Ctx) error {
-	return nil
+	// get id and parse
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	// Create database connection.
+	db, err := db.OpenConnection()
+	if err != nil {
+		// Return status 500 and database connection error.
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	// delete user from db
+	if !db.DeleteUser(id) {
+		// Return status 500 and error message.
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	// Return status 200 OK.
+	return c.Status(fiber.StatusNoContent).JSON(fiber.Map{
+		"error": false,
+		"msg":   "user deleted successfully!",
+		"user":  nil,
+	})
 }
 
 func CheckUserEmail(email string, u *models.User) bool {
-	// db, err := db.OpenConnection()
-	// if err != nil {
-	// 	// Return status 500 and database connection error.
-	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-	// 		"error": true,
-	// 		"msg":   err.Error(),
-	// 	})
-	// }
+	db, err := db.OpenConnection()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// var user models.User
-	// if !db.CheckUserEmail(email, &user) {
-	// 	return c.Status(fiber.StatusUnauthorized).SendString("You don't have an account")
-	// }
-
-	/*
-		open db connection
-		send query to check if email exists
-		if exists retur true
-		else false
-	*/
-	return true
+	return db.CheckUserEmail(email, u)
 }

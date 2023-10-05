@@ -34,12 +34,34 @@ func (q *UserQueries) CreateUser(u *models.User) error {
 	return nil
 }
 
-func (q *UserQueries) CheckUserEmail(email string) models.User {
-	user := models.User{}
-	/*
-		check if table users has entry with email
-		if has -> return user
-		else -> nil
-	*/
-	return user
+func (q *UserQueries) DeleteUser(id uuid.UUID) bool {
+	query := `DELETE FROM Users WHERE id=$1 LIMITE=1`
+	res, err := q.Exec(query, id)
+	if err == nil {
+		count, err := res.RowsAffected()
+		if err == nil {
+			// delete only current user
+			return count == 1
+		}
+	}
+
+	return false
+}
+
+func (q *UserQueries) CheckUserEmail(email string, u *models.User) bool {
+
+	query := `SELECT id, name, email, password FROM users WHERE email=$1 LIMIT=1`
+	rows, err := q.Queryx(query, email)
+	if err != nil {
+		return false
+	}
+
+	for rows.Next() {
+		err = rows.StructScan(&u)
+		if err != nil {
+			return false
+		}
+	}
+
+	return true
 }
